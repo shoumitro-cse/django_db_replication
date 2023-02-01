@@ -24,7 +24,7 @@ sudo nano /var/lib/postgres/data/postgresql.conf
 
 
 # for primary database
-docker run --name primary_db  -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=1234 \
+docker run --restart always --name primary_db  -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=1234 \
 -v /tmp/lib/postgres:/var/lib/postgresql/data -d postgis/postgis:13-3.1-alpine
 
 # add this line of code last of the file.
@@ -61,7 +61,7 @@ hot_standby = on
 
 mkdir /tmp/lib/postgres_secondary/standby.signal
 
-docker run --name secondary_db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=1234  -v \
+docker run --restart always --name secondary_db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=1234  -v \
 /tmp/lib/postgres_secondary:/var/lib/postgresql/data --link primary_db:db -p 5433:5432 -it postgis/postgis:13-3.1-alpine
 
 psql 'postgres://postgres:1234@0.0.0.0:5433/postgres?sslmode=disable'
@@ -100,7 +100,7 @@ hot_standby = on
 
 sudo mkdir /tmp/lib/postgres_third/standby.signal
 
-docker run --name third_db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=1234  -v \
+docker run --restart always --name third_db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=1234  -v \
 /tmp/lib/postgres_third:/var/lib/postgresql/data --link primary_db:db -p 5434:5432 -it postgis/postgis:13-3.1-alpine
 
 psql 'postgres://postgres:1234@0.0.0.0:5434/postgres?sslmode=disable'
@@ -128,7 +128,7 @@ hot_standby = on
 sudo mkdir /tmp/lib/postgres_fourth/standby.signal
 
 
-docker run --name fourth_db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=1234  -v \
+docker run --restart always --name fourth_db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=1234  -v \
 /tmp/lib/postgres_fourth:/var/lib/postgresql/data --link primary_db:db -p 5435:5432 -it postgis/postgis:13-3.1-alpine
 
 psql 'postgres://postgres:1234@0.0.0.0:5435/postgres?sslmode=disable'
