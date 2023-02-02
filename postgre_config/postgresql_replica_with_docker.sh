@@ -45,8 +45,9 @@ cp -r $(pwd)/postgres_data_backup $(pwd)/replica2_data
 
 # for secondary database
 docker run --restart always --name secondary_db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=1234  -v \
- $(pwd)/replica0_data:/var/lib/postgresql/data --link primary_db:db -p 5433:5432 -d postgis/postgis:latest
+ $(pwd)/replica0_data:/var/lib/postgresql/data --link primary_db:db -p 5433:5432 -it postgis/postgis:latest
 
+docker start secondary_db
 psql 'postgres://postgres:1234@0.0.0.0:5433/postgres?sslmode=disable'
 
 # for primary_db this command is very important for replica
@@ -60,7 +61,7 @@ SELECT * FROM pg_create_physical_replication_slot ('standby_replication_slot');
 primary_slot_name = 'standby_replication_slot'
 
 docker restart secondary_db
-
+docker logs secondary_db
 
 
 # for primary db
