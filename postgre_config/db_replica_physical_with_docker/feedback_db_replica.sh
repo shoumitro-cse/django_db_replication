@@ -105,3 +105,67 @@ hot_standby = on
 
 mkdir standby.signal
 
+
+
+
+# postgres backup
+pg_basebackup -h 35.212.212.164 -p 5432 -D /fb_data -U replica -P -v
+
+psql 'postgres://postgres:1234@0.0.0.0:5432/postgres?sslmode=disable'
+psql -h 0.0.0.0 -p 5432 -U postgres
+
+sudo docker stop primary_db fourth_db third_db secondary_db 
+sudo docker rm primary_db fourth_db third_db secondary_db
+
+sudo docker restart primary_db fourth_db third_db secondary_db
+
+docker run --restart always --name primary_db  -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=1234 \
+-v  $(pwd)/fb_data:/var/lib/postgresql/data -d postgis/postgis:latest
+
+sudo docker exec -it primary_db pg_basebackup -h 0.0.0.0 -p 5432 -D /fb_p_data -U replica -P -v
+pw: mektec_@1234
+
+nano ./fb_p_data/postgresql.conf
+primary_conninfo = 'host=db port=5432 user=replica password=mektec_@1234'
+hot_standby = on			# "off" disallows queries during recovery
+
+cp -r $(pwd)/fb_data_main $(pwd)/replica0_data
+cp -r $(pwd)/fb_data_main $(pwd)/replica1_data
+cp -r $(pwd)/fb_data_main $(pwd)/replica2_data
+
+docker run --restart always --name primary_db  -p 5432:5432 -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=1234 \
+-v  $(pwd)/fb_data:/var/lib/postgresql/data -d postgis/postgis:latest
+
+docker run --restart always --name secondary_db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=1234  -v \
+ $(pwd)/replica0_data:/var/lib/postgresql/data --link primary_db:db -p 5433:5432 -d postgis/postgis:latest
+ 
+docker run --restart always --name third_db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=1234  -v \
+ $(pwd)/replica1_data:/var/lib/postgresql/data --link primary_db:db -p 5434:5432 -d postgis/postgis:latest
+ 
+docker run --restart always --name fourth_db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=1234  -v \
+ $(pwd)/replica2_data:/var/lib/postgresql/data --link primary_db:db -p 5435:5432 -d postgis/postgis:latest
+
+
+
+# for primary db
+SELECT * FROM pg_stat_replication;
+CREATE TABLE student(
+   ID             INT   ,
+   NAME           TEXT ,
+   AGE            INT ,
+   ADDRESS        CHAR(50)
+);
+insert into student(id,name,age,address) values(100,'Shoumitro Roy','23','Jessore'); 
+select * from student;
+select count(*) from student;
+
+
+
+# for primary_db
+psql 'postgres://postgres:1234@0.0.0.0:5432/postgres?sslmode=disable'
+
+
+# for replica
+psql 'postgres://postgres:1234@0.0.0.0:5433/postgres?sslmode=disable'
+psql 'postgres://postgres:1234@0.0.0.0:5434/postgres?sslmode=disable'
+psql 'postgres://postgres:1234@0.0.0.0:5435/postgres?sslmode=disable'
